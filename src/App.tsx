@@ -7,6 +7,7 @@ function App() {
   const [image, setImage] = useState<string | ArrayBuffer | null>(null);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<any>(null);
+  const [error, setError] = useState<any>(null);
   const [matches, setMatches] = useState<any>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,9 +40,14 @@ function App() {
         });
   
         const data = await response.json();
-        setResponse(data?.result?.label);
+
+        if(data?.result?.label){
+          setResponse(data?.result?.label);
+        }else{
+          setError(data?.message? data?.message: 'No label found');
+        }
+       
       } catch (error) {
-        console.error('Error sending image:', error);
         setResponse('Error sending image');
       } finally {
         setLoading(false);
@@ -82,6 +88,7 @@ function App() {
     setImage(null);
     setResponse(null);
     setMatches(null);
+    setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -113,6 +120,7 @@ function App() {
           </button>
           <button onClick={handleClearImage} disabled={!image || loading} className='App-button'>Clear Image</button>
         </div>
+        {error && <div className="App-error">{error}</div>}
         {matches?.data?.length > 0 && (
           <div className="App-matches">
             <h2>Matches</h2>
