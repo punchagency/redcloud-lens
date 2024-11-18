@@ -28,3 +28,53 @@
   border: 2px solid #61dafb;
   border-radius: 8px;
 }
+
+.App-button {
+  border-radius: 8px;
+  border: 2px solid #61dafb;
+  background-color: #282c34;
+  color: white;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 10px;
+}
+
+.App-input {
+  border-radius: 8px;
+  border: 2px solid #61dafb;
+  background-color: #282c34;
+  color: white;
+  padding: 10px 20px;
+  font-size: 16px;
+  margin: 10px;
+}
+
+.App-button:hover {
+  background-color: #61dafb;
+  color: black;
+}
+
+.App-button:active {
+  background-color: #61dafb;
+  color: black;
+}
+
+.App-button:focus {
+  outline: none;
+}
+
+.App-input:focus {
+  outline: none;
+}
+
+.App-input:hover {
+  background-color: #61dafb;
+  color: black;
+}
+
+.App-input:active {
+  background-color: #61dafb;
+  color: black;
+}
+
