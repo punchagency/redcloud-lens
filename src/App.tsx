@@ -25,7 +25,7 @@ function App() {
       setLoading(true);
       setResponse(null);
       try {
-        const token = process.env.REACT_APP_IMAGE_UPLOAD_TOKEN; // Replace with your actual token
+        const token = process.env.REACT_APP_IMAGE_UPLOAD_TOKEN;
         const base64Image = (image as string).replace(/^data:image\/\w+;base64,/, "");
         const response = await fetch(process.env.REACT_APP_IMAGE_UPLOAD_URL as string, {
           method: 'POST',
