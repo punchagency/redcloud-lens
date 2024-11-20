@@ -17,6 +17,8 @@ function App() {
       reader.onload = () => {
         setImage(reader.result);
         setError(null); // Clear any previous error
+        setResponse(null);
+        setMatches(null);
       };
       reader.readAsDataURL(file);
     }
