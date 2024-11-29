@@ -1,5 +1,12 @@
+import { InsertPhoto as InsertPhotoIcon, Search as SearchIcon } from '@mui/icons-material';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import { Box, Button, CircularProgress, Container, Grid2, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
+import ProductsLoading from './components/ProductsLoading';
+import SearchCard from './components/SearchCard';
+import { SearchResults } from './components/SearchResults';
+import { searchSuggestions } from './utils/data';
 
 function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -9,6 +16,8 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [matches, setMatches] = useState<any>(null);
   const [matchesLoading, setMatchesLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [results, setResults] = useState<any[]>([]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -17,12 +26,16 @@ function App() {
       reader.onload = () => {
         setImage(reader.result);
         setError(null); // Clear any previous error
-        setResponse(null);
-        setMatches(null);
+        setResponse(null); // Clear previous response
+        setMatches(null); // Clear previous matches
+        setSearchText(''); // Clear previous search text
+        setResults([]); // Clear previous results
       };
       reader.readAsDataURL(file);
     }
   };
+
+  
 
   const handleSendImage = async () => {
     if (!image) {
@@ -54,7 +67,7 @@ function App() {
       } else {
         setError(data?.message ? data?.message : 'No label found');
       }
-     
+
     } catch (error) {
       setError('Error sending image');
     } finally {
@@ -89,6 +102,45 @@ function App() {
     }
   };
 
+  const handleGetNLPMatches = async (searchText: string, limit: number = 10) => {
+    setMatchesLoading(true);
+    setMatches(null);
+    try {
+      const token = process.env.REACT_APP_MATCHED_TOKEN; // Replace with your actual token
+      const response = await fetch(process.env.REACT_APP_NLP_URL as string, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: searchText,
+          limit
+        }),
+      });
+
+      const data = await response.json();
+      setMatches(data);
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+      setMatches('Error fetching matches');
+    } finally {
+      setMatchesLoading(false);
+    }
+  }
+
+  const handleSubmitSearch = () => {
+    if (searchText) {
+      handleGetNLPMatches(searchText);
+    }
+
+   if (image) {
+      handleSendImage();
+    }
+
+    setResults([]);
+  }
+
   const handleClearImage = () => {
     setImage(null);
     setResponse(null);
@@ -97,6 +149,8 @@ function App() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    setSearchText(''); // Clear previous search text
+    setResults([]); // Clear previous results
   };
 
   useEffect(() => {
@@ -105,50 +159,94 @@ function App() {
     }
   }, [response]);
 
+
+  useEffect(() => {
+    if(matches?.data) {
+      setResults(matches.data);
+    }
+
+    if(matches?.results) {
+      setResults(matches.results);
+    }
+
+  },[matches])
+
   return (
-    <div className="App">
-      <div className="App-header">
-        <div className='App-Uploader'>
-        <h1>RedCloud Lens</h1>
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleImageUpload}
-          ref={fileInputRef}
-          className="App-input"
-        />
-        {response && <p>{response}</p>}
-        {image && <img src={image as string} alt="Uploaded" className="App-video" />}
-        <div className="App-buttons">
-          <button onClick={handleSendImage} disabled={loading} className="App-button">
-            {loading ? 'Sending...' : 'Send Image for Identification'}
-          </button>
-          <button onClick={handleClearImage} disabled={loading} className="App-button">Clear Image</button>
-        </div>
-        {error && <div className="App-error">{error}</div>}
-      
-        </div>
-        <div className='App-Info'>
-        {matchesLoading && <div className="App-matches">Fetching matches...</div>}
-        {matches && matches.data?.length === 0 && <div className="App-matches">No matches found</div>}
-        {matches?.data?.length > 0 && (
-          <div className="App-matches">
-            <p>Matches</p>
-            <ul>
-              {matches.data.map((match: any) => (
-                <li key={match.ProductID}>
-                  <div>{match.ProductName}</div>
-                  <div>{match.ProductPrice}</div>
-                  <div>{match.SellerName}</div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        </div>
-      </div>
-    </div>
+    <Container className="App">
+      <Grid2 container spacing={2}>
+        <Grid2 size={12}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            RedCloud Lens
+          </Typography>
+          <TextField
+            multiline
+            rows={5}
+            fullWidth
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            sx={{
+              marginBottom: 5
+            }}
+            placeholder="Upload an image"
+            InputProps={{
+              startAdornment: image && (
+                <InputAdornment position="start">
+                  <img src={image as string} alt="Uploaded" style={{ height: '100%', maxHeight: '100px', marginRight: '10px' }} />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Stack direction='row'>
+                    <input
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      id="icon-button-file"
+                      type="file"
+                      onChange={handleImageUpload}
+                      ref={fileInputRef}
+                    />
+                    <label htmlFor="icon-button-file">
+                      <IconButton color="primary" component="span">
+                        <InsertPhotoIcon />
+                      </IconButton>
+                    </label>
+                    <Button size='small' color="primary" variant='contained' onClick={handleSubmitSearch} disabled={loading} startIcon={<SearchIcon />}>
+                      {loading ? <CircularProgress size={24} /> : 'Search'}
+                    </Button>
+                  </Stack>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Grid2>
+        <Grid2 size={12}>
+          <Stack direction='row' spacing={2} justifyContent="space-between">
+            <Typography variant="h6" component="h2" gutterBottom>
+              Trending Searches
+            </Typography>
+            <IconButton
+              onClick={handleClearImage}
+              disabled={loading}
+            >
+              <RestartAltIcon />
+            </IconButton>
+          </Stack>
+        </Grid2>
+        {!matches && !matchesLoading && searchSuggestions?.map((suggestion, index) => (
+            <SearchCard key={index} {...suggestion} />
+          ))}
+        <Grid2 size={12}>
+          <Box sx={{ mt: 4 }}>
+            {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
+            {matchesLoading && <ProductsLoading />}
+            {results && results?.length === 0 && !matchesLoading && !loading && <Typography>No matches found</Typography>}
+          </Box>
+        </Grid2>
+        <Grid2 size={12}>
+          <SearchResults results={results?.map((mt: { ProductID: string; ProductName: string; ProductImage: string; SellerName: string; }) => ({ ProductID: mt.ProductID, ProductName: mt.ProductName, ProductImage: image? image as string: '8136031.png', SellerName: mt.SellerName }))} />
+        </Grid2>
+      </Grid2>
+    </Container>
   );
 }
 
