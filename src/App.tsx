@@ -233,7 +233,10 @@ function App() {
           </Stack>
         </Grid2>
         {!matches && !matchesLoading && searchSuggestions?.map((suggestion, index) => (
-            <SearchCard key={index} {...suggestion} />
+            <SearchCard key={index} {...suggestion} onClick={()=>{
+              setSearchText(suggestion.title);
+              handleGetNLPMatches(suggestion.title);
+            }} />
           ))}
         <Grid2 size={12}>
           <Box sx={{ mt: 4 }}>

@@ -9,22 +9,22 @@ interface SearchSuggestion {
 
   export const searchSuggestions: SearchSuggestion[] = [
     {
-      title: 'Search by Image',
+      title: 'Best Sellers of Coca-Cola',
       onClick: () => console.log('Search by Image'),
       startIcon: <ModelTrainingIcon />,
     },
     {
-      title: 'Model Training',
+      title: 'Fanta Flavors',
       onClick: () => console.log('Model Training'),
       startIcon: <SeachIcon />,
     },
     {
-      title: 'Mike Tyson Inspired Products',
+      title: 'Sprite Flavors',
       onClick: () => console.log('Mike Tyson Inspired Products'),
       startIcon: <ModelTrainingIcon />,
     },
     { 
-      title: 'Drinks For The Weekend',
+      title: 'Coke Zero',
       onClick: () => console.log('Drinks For The Weekend'),
       startIcon: <SeachIcon />,
     },
