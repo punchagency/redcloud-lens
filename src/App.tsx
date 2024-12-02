@@ -75,32 +75,32 @@ function App() {
     }
   };
 
-  const handleGetMatches = async (label: string, limit: number = 10) => {
-    setMatchesLoading(true);
-    setMatches(null);
-    try {
-      const token = process.env.REACT_APP_MATCHED_TOKEN; // Replace with your actual token
-      const response = await fetch(process.env.REACT_APP_MATCHED_URL as string, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          label: label?.replace('-', ' '),
-          limit
-        }),
-      });
+  // const handleGetMatches = async (label: string, limit: number = 10) => {
+  //   setMatchesLoading(true);
+  //   setMatches(null);
+  //   try {
+  //     const token = process.env.REACT_APP_MATCHED_TOKEN; // Replace with your actual token
+  //     const response = await fetch(process.env.REACT_APP_MATCHED_URL as string, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`,
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         label: label?.replace('-', ' '),
+  //         limit
+  //       }),
+  //     });
 
-      const data = await response.json();
-      setMatches(data);
-    } catch (error) {
-      console.error('Error fetching matches:', error);
-      setMatches('Error fetching matches');
-    } finally {
-      setMatchesLoading(false);
-    }
-  };
+  //     const data = await response.json();
+  //     setMatches(data);
+  //   } catch (error) {
+  //     console.error('Error fetching matches:', error);
+  //     setMatches('Error fetching matches');
+  //   } finally {
+  //     setMatchesLoading(false);
+  //   }
+  // };
 
   const handleGetNLPMatches = async (searchText: string, limit: number = 10) => {
     setMatchesLoading(true);
@@ -130,7 +130,7 @@ function App() {
   }
 
   const handleSubmitSearch = () => {
-    if (searchText) {
+    if (searchText && !image) {
       handleGetNLPMatches(searchText);
     }
 
@@ -155,9 +155,9 @@ function App() {
 
   useEffect(() => {
     if (response) {
-      handleGetMatches(response);
+      handleGetNLPMatches(`${searchText} ${response}`);
     }
-  }, [response]);
+  }, [response, searchText]);
 
 
   useEffect(() => {
