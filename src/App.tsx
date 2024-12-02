@@ -102,10 +102,28 @@ function App() {
   //   }
   // };
 
-  const handleGetNLPMatches = async (searchText: string, limit: number = 10) => {
+  const handleGetNLPMatches = async (searchText: string, productName: string = "", limit: number = 10) => {
     setMatchesLoading(true);
     setMatches(null);
     try {
+
+      let payload = {};
+
+      if(searchText) {
+        payload = {
+          query: searchText,
+          limit
+        }
+      }
+
+      if(productName) {
+        payload = {
+          query: searchText,
+          product_name: productName,
+          limit
+        }
+      }
+
       const token = process.env.REACT_APP_MATCHED_TOKEN; // Replace with your actual token
       const response = await fetch(process.env.REACT_APP_NLP_URL as string, {
         method: 'POST',
@@ -114,8 +132,7 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          query: searchText,
-          limit
+          ...payload
         }),
       });
 
@@ -155,7 +172,7 @@ function App() {
 
   useEffect(() => {
     if (response) {
-      handleGetNLPMatches(`${searchText} ${response}`);
+      handleGetNLPMatches(`${searchText}`, `${response}`);
     }
   }, [response, searchText]);
 
