@@ -6,18 +6,21 @@ import './App.css';
 import ProductsLoading from './components/ProductsLoading';
 import SearchCard from './components/SearchCard';
 import { SearchResults } from './components/SearchResults';
+import { ProductType } from './types/product';
 import { searchSuggestions } from './utils/data';
 
-function App() {
+
+const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [image, setImage] = useState<string | ArrayBuffer | null>(null);
   const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState<any>(null);
+  const [response, setResponse] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [matches, setMatches] = useState<any>(null);
+  const [matches, setMatches] = useState<ProductType[] | null>(null);
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<ProductType[]>([]);
+  const [searchClicked, setSearchClicked] = useState(false);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -25,17 +28,19 @@ function App() {
       const reader = new FileReader();
       reader.onload = () => {
         setImage(reader.result);
-        setError(null); // Clear any previous error
-        setResponse(null); // Clear previous response
-        setMatches(null); // Clear previous matches
-        setSearchText(''); // Clear previous search text
-        setResults([]); // Clear previous results
+        clearPreviousState();
       };
       reader.readAsDataURL(file);
     }
   };
 
-  
+  const clearPreviousState = () => {
+    setError(null);
+    setResponse(null);
+    setMatches(null);
+    setSearchText('');
+    setResults([]);
+  };
 
   const handleSendImage = async () => {
     if (!image) {
@@ -55,19 +60,16 @@ function App() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          image: base64Image
-        }),
+        body: JSON.stringify({ image: base64Image }),
       });
 
       const data = await response.json();
 
       if (data?.result?.label) {
-        setResponse(data?.result?.label);
+        setResponse(data.result.label);
       } else {
-        setError(data?.message ? data?.message : 'No label found');
+        setError(data?.message || 'No label found');
       }
-
     } catch (error) {
       setError('Error sending image');
     } finally {
@@ -75,118 +77,70 @@ function App() {
     }
   };
 
-  // const handleGetMatches = async (label: string, limit: number = 10) => {
-  //   setMatchesLoading(true);
-  //   setMatches(null);
-  //   try {
-  //     const token = process.env.REACT_APP_MATCHED_TOKEN; // Replace with your actual token
-  //     const response = await fetch(process.env.REACT_APP_MATCHED_URL as string, {
-  //       method: 'POST',
-  //       headers: {
-  //         'Authorization': `Bearer ${token}`,
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({
-  //         label: label?.replace('-', ' '),
-  //         limit
-  //       }),
-  //     });
-
-  //     const data = await response.json();
-  //     setMatches(data);
-  //   } catch (error) {
-  //     console.error('Error fetching matches:', error);
-  //     setMatches('Error fetching matches');
-  //   } finally {
-  //     setMatchesLoading(false);
-  //   }
-  // };
-
   const handleGetNLPMatches = async (searchText: string, productName: string = "", limit: number = 10) => {
     setMatchesLoading(true);
     setMatches(null);
     try {
+      const payload = {
+        query: searchText,
+        product_name: productName || undefined,
+        limit,
+      };
 
-      let payload = {};
-
-      if(searchText) {
-        payload = {
-          query: searchText,
-          limit
-        }
-      }
-
-      if(productName) {
-        payload = {
-          query: searchText,
-          product_name: productName,
-          limit
-        }
-      }
-
-      const token = process.env.REACT_APP_MATCHED_TOKEN; // Replace with your actual token
+      const token = process.env.REACT_APP_MATCHED_TOKEN;
       const response = await fetch(process.env.REACT_APP_NLP_URL as string, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...payload
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
-      setMatches(data);
+      setMatches(data?.results || []);
     } catch (error) {
       console.error('Error fetching matches:', error);
-      setMatches('Error fetching matches');
+      setMatches(null);
+      setError('Error fetching matches');
     } finally {
       setMatchesLoading(false);
     }
-  }
+  };
 
   const handleSubmitSearch = () => {
+    setSearchClicked(true);
     if (searchText && !image) {
       handleGetNLPMatches(searchText);
     }
 
-   if (image) {
+    if (image) {
       handleSendImage();
     }
 
     setResults([]);
-  }
+  };
 
   const handleClearImage = () => {
     setImage(null);
-    setResponse(null);
-    setMatches(null);
-    setError(null);
+    clearPreviousState();
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    setSearchText(''); // Clear previous search text
-    setResults([]); // Clear previous results
   };
 
   useEffect(() => {
-    if (response) {
-      handleGetNLPMatches(`${searchText}`, `${response}`);
+    if (response && searchClicked) {
+      handleGetNLPMatches(searchText, response);
+      setSearchClicked(false);
     }
-  }, [response, searchText]);
-
+  }, [response, searchText, searchClicked]);
 
   useEffect(() => {
-    if(matches?.data) {
-      setResults(matches.data);
+    if (matches) {
+      setResults(matches || []);
     }
-
-    if(matches?.results) {
-      setResults(matches.results);
-    }
-
-  },[matches])
+  }, [matches]);
 
   return (
     <Container className="App">
@@ -201,9 +155,7 @@ function App() {
             fullWidth
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            sx={{
-              marginBottom: 5
-            }}
+            sx={{ marginBottom: 5 }}
             placeholder="Upload an image"
             InputProps={{
               startAdornment: image && (
@@ -213,7 +165,7 @@ function App() {
               ),
               endAdornment: (
                 <InputAdornment position="end">
-                  <Stack direction='row'>
+                  <Stack direction="row">
                     <input
                       accept="image/*"
                       style={{ display: 'none' }}
@@ -227,7 +179,7 @@ function App() {
                         <InsertPhotoIcon />
                       </IconButton>
                     </label>
-                    <Button size='small' color="primary" variant='contained' onClick={handleSubmitSearch} disabled={loading} startIcon={<SearchIcon />}>
+                    <Button size="small" color="primary" variant="contained" onClick={handleSubmitSearch} disabled={loading} startIcon={<SearchIcon />}>
                       {loading ? <CircularProgress size={24} /> : 'Search'}
                     </Button>
                   </Stack>
@@ -237,24 +189,21 @@ function App() {
           />
         </Grid2>
         <Grid2 size={12}>
-          <Stack direction='row' spacing={2} justifyContent="space-between">
+          <Stack direction="row" spacing={2} justifyContent="space-between">
             <Typography variant="h6" component="h2" gutterBottom>
               Trending Searches
             </Typography>
-            <IconButton
-              onClick={handleClearImage}
-              disabled={loading}
-            >
+            <IconButton onClick={handleClearImage} disabled={loading}>
               <RestartAltIcon />
             </IconButton>
           </Stack>
         </Grid2>
         {!matches && !matchesLoading && searchSuggestions?.map((suggestion, index) => (
-            <SearchCard key={index} {...suggestion} onClick={()=>{
-              setSearchText(suggestion.title);
-              handleGetNLPMatches(suggestion.title);
-            }} />
-          ))}
+          <SearchCard key={index} {...suggestion} onClick={() => {
+            setSearchText(suggestion.title);
+            handleGetNLPMatches(suggestion.title);
+          }} />
+        ))}
         <Grid2 size={12}>
           <Box sx={{ mt: 4 }}>
             {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
@@ -263,7 +212,15 @@ function App() {
           </Box>
         </Grid2>
         <Grid2 size={12}>
-          <SearchResults results={results?.map((mt: { ProductID: string; ProductName: string; ProductImage: string; SellerName: string; }) => ({ ProductID: mt.ProductID, ProductName: mt.ProductName, ProductImage: image? image as string: '8136031.png', SellerName: mt.SellerName }))} />
+          <SearchResults results={results?.map((mt) => ({
+            ProductID: mt.ProductID,
+            ProductName: mt.ProductName,
+            ProductImage: image ? image as string : '8136031.png',
+            CategoryName: mt.CategoryName,
+            Country: mt.Country,
+            Brand: mt.Brand,
+            ProductPrice: mt.ProductPrice,
+          }))} />
         </Grid2>
       </Grid2>
     </Container>
