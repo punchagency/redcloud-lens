@@ -1,4 +1,3 @@
-import { Stack } from '@mui/material';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -16,14 +15,12 @@ const Product: React.FC<ProductType> = ({ ProductName, ProductImage, CategoryNam
           <Typography gutterBottom variant="h5" component="div">
           {ProductName?.slice(0, 50)}{ProductName.length > 50 ? '...' : ''}
           </Typography>
-          <Stack direction="row" spacing={2} justifyContent="space-between">
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {CategoryName}
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             ${ProductPrice}
           </Typography>
-          </Stack>
         </CardContent>
     </Card>
   );
