@@ -6,7 +6,7 @@ export const SearchResults: React.FC<{ results: ProductType[] }> = ({ results })
   return (
     <Grid2 container spacing={2} sx={{ my: 2}}>
       {results?.map((product, index) => (
-        <Grid2 size={4} key={product.ProductID}>
+        <Grid2 size={4} key={index}>
           <Product {...product} />
         </Grid2>
       ))}

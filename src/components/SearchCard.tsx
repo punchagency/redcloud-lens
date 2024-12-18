@@ -10,10 +10,10 @@ interface SearchCardProps {
 
 const SearchCard: React.FC<SearchCardProps> = ({ title, onClick, startIcon, endIcon }) => {
   return (
-    <Grid2 size={6} sx={{
+    <Grid2 size={3} sx={{
       cursor: 'pointer'
     }}>
-    <Card sx={{ borderRadius: 2, boxShadow: 2}} onClick={onClick}>
+    <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#f4f4f4'}} onClick={onClick}>
       <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {startIcon && <IconButton>{startIcon}</IconButton>}
         <Typography variant="body2" align="center" sx={{ flexGrow: 1 }}>
