@@ -36,17 +36,19 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
     }
   };
 
-
-  const handleSubmitSearch = () => {
-    if (input || newImage) {
-      handleGetNLPMatches(input, newImage as string || '');
-    }
-  };
   const handleSendMessage = () => {
     if (input.trim()) {
       setMessages([...messages, input]);
       setInput('');
       setChatData([...chatData, { prompt: input, data: [] }]);
+    }
+  };
+
+
+  const handleSubmitSearch = () => {
+    if (input || newImage) {
+      handleSendMessage();
+      handleGetNLPMatches(input, newImage as string || '');
     }
   };
 
