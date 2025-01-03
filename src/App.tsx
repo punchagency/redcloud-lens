@@ -9,19 +9,44 @@ import ProductsLoading from './components/ProductsLoading';
 import SearchCard from './components/SearchCard';
 import { SearchResults } from './components/SearchResults';
 import { ProductType } from './types/product';
-import { searchSuggestions } from './utils/data';
+import { Categories, searchSuggestions } from './utils/data';
 
 const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [image, setImage] = useState<string | ArrayBuffer | null>(null);
   const [firstLoad, setFirstLoad] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [responseMessage, setResponseMessage] = useState<string | null>(null);
   const [response, setResponse] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [matches, setMatches] = useState<ProductType[] | null>(null);
+  const [matches, setMatches] = useState<{
+    conversationId: string,
+    message: string,
+    query: string,
+    sqlQuery: string,
+    suggestedQries: string[],
+    resultAnalysis: string,
+    analyticsQueries:string,
+    products: ProductType[]
+  } | null>(null);
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [results, setResults] = useState<ProductType[]>([]);
+  const [results, setResults] = useState<{conversationId: string,
+  message: string,
+  query: string,
+  sqlQuery: string,
+  suggestedQries: string[],
+  resultAnalysis: string,
+  analyticsQueries:string,
+  products: ProductType[]}>({
+    conversationId: '',
+    message: '',
+    query: '',
+    sqlQuery: '',
+    suggestedQries: [],
+    resultAnalysis: '',
+    analyticsQueries:'',
+    products: []
+  });
   const [searchClicked, setSearchClicked] = useState(false);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,42 +66,16 @@ const App: React.FC = () => {
     setResponse(null);
     setMatches(null);
     setSearchText('');
-    setResults([]);
-  };
-
-  const handleSendImage = async () => {
-    if (!image) {
-      setError('Please upload an image before sending.');
-      return;
-    }
-
-    setLoading(true);
-    setResponse(null);
-    setError(null);
-    try {
-      const token = process.env.REACT_APP_IMAGE_UPLOAD_TOKEN;
-      const base64Image = (image as string).replace(/^data:image\/\w+;base64,/, "");
-      const response = await fetch(process.env.REACT_APP_IMAGE_UPLOAD_URL as string, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ image: base64Image }),
-      });
-
-      const data = await response.json();
-
-      if (data?.result?.label) {
-        setResponse(data.result.label);
-      } else {
-        setError(data?.message || 'No label found');
-      }
-    } catch (error) {
-      setError('Error sending image');
-    } finally {
-      setLoading(false);
-    }
+    setResults({
+      conversationId: '',
+      message: '',
+      query: '',
+      sqlQuery: '',
+      suggestedQries: [],
+      resultAnalysis: '',
+      analyticsQueries:'',
+      products: []
+    });
   };
 
   const handleGetNLPMatches = async (searchText: string, product_image: string = "", limit: number = 10) => {
@@ -88,6 +87,7 @@ const App: React.FC = () => {
         query: searchText,
         product_image: product_image? product_image?.replace(/^data:image\/\w+;base64,/, ""): undefined,
         limit,
+        conversation_id: matches?.conversationId || undefined,
       };
 
       const token = process.env.REACT_APP_MATCHED_TOKEN;
@@ -101,11 +101,27 @@ const App: React.FC = () => {
       });
 
       const data = await response.json();
-      setMatches(data?.results || []);
+      if (data) {
+        const formattedResults = data?.results?.map((result: any) => ({
+          ...result,
+          product_image: product_image || '8136031.png',
+        }));
+        setMatches(
+          {products: formattedResults,
+           conversationId: data?.conversation_id,
+            message: data?.message,
+            query: data?.query,
+            sqlQuery: data?.sql_query,
+            suggestedQries: data?.suggested_queries,
+            resultAnalysis: data?.result_analysis,
+            analyticsQueries: data?.analytics_queries
+          });
+        setResponseMessage(data?.message || '');
+      }
     } catch (error) {
-      console.error('Error fetching matches:', error);
       setMatches(null);
       setError('Error fetching matches');
+      setResponseMessage((error as Error).message || 'Error fetching matches');
     } finally {
       setMatchesLoading(false);
     }
@@ -117,7 +133,17 @@ const App: React.FC = () => {
       handleGetNLPMatches(searchText, image as string || '');
     }
 
-    setResults([]);
+    setResults({
+      conversationId: '',
+      message: '',
+      query: '',
+      sqlQuery: '',
+      suggestedQries: [],
+      resultAnalysis: '',
+      analyticsQueries:'',
+      products: []
+    }
+    );
   };
 
   const handleClearImage = () => {
@@ -136,18 +162,20 @@ const App: React.FC = () => {
   }, [response, searchText, searchClicked]);
 
   useEffect(() => {
-    if (matches) {
-      setResults(matches || []);
-    }
-  }, [matches]);
+      if (matches) {
+        setResults(matches);
+      }
+    }, [matches?.products]);
 
+    const handleSelectSuggestions = (suggestion: string) => {
+      setSearchText(suggestion);
+      handleGetNLPMatches(suggestion);
+    }
+  
   return (
     <Container className="App">
       {!firstLoad &&
-        <ChatScreen results={results?.map((mt) => ({
-          ...mt,
-          product_image: image ? image as string : '8136031.png',
-        }))} image={image || ''} prompt={searchText} matchesLoading={matchesLoading} error={error} handleGetNLPMatches={handleGetNLPMatches} />
+        <ChatScreen responseMessage={responseMessage} results={results} image={image || ''} prompt={searchText} matchesLoading={matchesLoading} error={error} handleGetNLPMatches={handleGetNLPMatches} />
       }
       {firstLoad && (
         <Grid2 container spacing={2}>
@@ -190,8 +218,8 @@ const App: React.FC = () => {
                           <InsertPhotoIcon />
                         </IconButton>
                       </label>
-                      <Button size="small" color="primary" variant="contained" onClick={handleSubmitSearch} disabled={loading} startIcon={<SearchIcon />}>
-                        {loading ? <CircularProgress size={24} /> : 'Search'}
+                      <Button size="small" color="primary" variant="contained" onClick={handleSubmitSearch} disabled={matchesLoading} startIcon={<SearchIcon />}>
+                        {matchesLoading ? <CircularProgress size={24} /> : 'Search'}
                       </Button>
                     </Stack>
                   </InputAdornment>
@@ -204,7 +232,7 @@ const App: React.FC = () => {
               <Typography variant="h6" component="h2" gutterBottom>
                 Trending Searches
               </Typography>
-              <IconButton onClick={handleClearImage} disabled={loading}>
+              <IconButton onClick={handleClearImage} disabled={matchesLoading}>
                 <RestartAltIcon />
               </IconButton>
             </Stack>
@@ -220,19 +248,19 @@ const App: React.FC = () => {
               <Typography variant="h6" component="h2" gutterBottom>
                 Categories
               </Typography>
-              <ProductCategory />
+              <ProductCategory categories={Categories?.map((cat)=> cat['Category Name'])} onCategoryClick={handleSelectSuggestions}/>
             </Stack>
           </Grid2>
           <Grid2 size={12}>
             <Box sx={{ mt: 4 }}>
               {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
               {matchesLoading && <ProductsLoading />}
-              {results && results?.length === 0 && !matchesLoading && !loading && (image || searchText) && <Typography>No matches found</Typography>}
+              {results && results?.products?.length === 0 && !matchesLoading && (image || searchText) && <Typography>No matches found</Typography>}
             </Box>
           </Grid2>
 
           <Grid2 size={12}>
-            <SearchResults results={results?.map((mt) => ({
+            <SearchResults results={results?.products?.map((mt) => ({
               ...mt,
               product_image: image ? image as string : '8136031.png',
             }))} />
