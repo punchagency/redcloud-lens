@@ -1,3 +1,4 @@
+import ClearIcon from '@mui/icons-material/Clear';
 import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 import SendIcon from '@mui/icons-material/Send';
 import { Box, Chip, Container, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
@@ -8,14 +9,16 @@ import ProductsLoading from './ProductsLoading';
 import { SearchResults } from './SearchResults';
 
 interface ChatScreenProps {
-  results: {   conversationId: string,
+  results: {
+    conversationId: string,
     message: string,
     query: string,
     sqlQuery: string,
     suggestedQries: string[],
     resultAnalysis: string,
-    analyticsQueries:string,
-    products: ProductType[]},
+    analyticsQueries: string,
+    products: ProductType[]
+  },
   image: string | ArrayBuffer;
   prompt: string;
   matchesLoading: boolean;
@@ -42,7 +45,7 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
   };
 
   const handleSendMessage = () => {
-    if (input.trim()) {
+    if (input.trim() || newImage) {
       const newMessage = { prompt: input, image: newImage as string || '', data: [], responseMessage: '', suggestedQueries: [], resultAnalysis: '' };
       setMessages((prevMessages) => [...prevMessages, input]);
       setChatData((prevChatData) => [...prevChatData, newMessage]);
@@ -54,6 +57,7 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
     if (input || newImage) {
       handleSendMessage();
       handleGetNLPMatches(input, newImage as string || '');
+      setInput('');
     }
   };
 
@@ -63,24 +67,33 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
     }
   };
 
-  useEffect(() => {
-      const newResults = results?.products?.map((result) => ({
-        ...result,
-        product_image: '8136031.png',
-      }));
-
-      setChatData((prevChatData) => [
+   useEffect(() => {
+    if (!results) return;
+  
+    const { products, query, suggestedQries, resultAnalysis } = results;
+  
+    const newResults = products?.map((result) => ({
+      ...result,
+      product_image: '8136031.png',
+    }));
+  
+    setChatData((prevChatData) => {
+      const lastChatData = prevChatData[prevChatData.length - 1] || {};
+      return [
         ...prevChatData.slice(0, prevChatData.length - 1),
         {
-          prompt: messages[messages.length - 1],
+          prompt: query,
           data: newResults,
-          image: newImage as string || image as string || '',
-          suggestedQueries: results.suggestedQries,
+          image: lastChatData.image || (image as string) || '',
+          suggestedQueries: suggestedQries,
           responseMessage: responseMessage || '',
-          resultAnalysis: results.resultAnalysis
+          resultAnalysis: resultAnalysis,
         },
-      ]);
-  }, [results, image, newImage, responseMessage, messages]);
+      ];
+    });
+  
+    setInput('');
+  }, [results, image, responseMessage]);
 
   useEffect(() => {
     scrollToBottom();
@@ -106,25 +119,33 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
       <Box sx={{ flexGrow: 1, overflowY: 'auto', padding: 2 }} ref={chatContainerRef}>
         {chatData.map((data, index) => (
           <Box sx={{ paddingBottom: 2 }} key={index}>
-            {data.prompt ? (
+            {data.prompt && (
               <Stack direction="column" alignItems="flex-end" justifyContent="flex-end" spacing={1}>
                 <Chip label={data.prompt} sx={{ marginBottom: 1, width: 'max-content' }} />
               </Stack>
-            ) : data.image && (
+            )}
+            {data.image && (
               <Stack direction="column" alignItems="flex-end" justifyContent="flex-end" spacing={1}>
                 <img src={data.image} alt="Uploaded" style={{ height: '100%', maxHeight: '50px', marginRight: '10px' }} />
               </Stack>
             )}
-
-            {data?.suggestedQueries?.length > 0 && <ProductCategory categories={data?.suggestedQueries} onCategoryClick={handleCategoryClick}/>}
-            {data?.resultAnalysis && data.resultAnalysis.length > 0 && <Typography variant="subtitle1" color="primary" sx={{ marginBottom: 1, width: '100%', textAlign: 'left' }}>
-              {data.resultAnalysis}
-            </Typography>}
-            
+            {data?.suggestedQueries?.length > 0 && (
+              chatData?.length - 1 === index && matchesLoading ? null : (
+                <ProductCategory
+                  categories={data.suggestedQueries}
+                  onCategoryClick={handleCategoryClick}
+                />
+              )
+            )}
+            {data?.resultAnalysis && data.resultAnalysis.length > 0 && (
+              chatData?.length - 1 === index && matchesLoading ? null : (
+                <Typography variant="subtitle1" color="primary" sx={{ marginBottom: 1, width: '100%', textAlign: 'left' }}>
+                  {data.resultAnalysis}
+                </Typography>)
+            )}
             {!(matchesLoading && index === chatData.length - 1) && data.data.length > 0 && (
               <SearchResults results={data.data} />
             )}
-
             {data.responseMessage && data.data.length === 0 && !matchesLoading && (
               <Stack direction="column" alignItems="flex-start" justifyContent="flex-start" spacing={1}>
                 <Chip
@@ -149,9 +170,19 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
           sx={{ marginRight: 1 }}
           onKeyDown={handleKeyDown}
           InputProps={{
-            startAdornment: newImage && (
+                  startAdornment: newImage && (
               <InputAdornment position="start">
-                <img src={newImage as string} alt="Uploaded" style={{ height: '100%', maxHeight: '50px', marginRight: '10px' }} />
+                <Stack direction="row" alignItems="center">
+                  <img src={newImage as string} alt="Uploaded" style={{ height: '100%', maxHeight: '50px', marginRight: '10px' }} />
+                  <IconButton
+                    color="secondary"
+                    onClick={() => setImage(null)}
+                    size="small"
+                    sx={{ marginLeft: '5px' }}
+                  >
+                    <ClearIcon/>
+                  </IconButton>
+                </Stack>
               </InputAdornment>
             ),
             endAdornment: (

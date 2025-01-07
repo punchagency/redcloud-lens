@@ -17,6 +17,7 @@ const App: React.FC = () => {
   const [firstLoad, setFirstLoad] = useState(true);
   const [responseMessage, setResponseMessage] = useState<string | null>(null);
   const [response, setResponse] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [matches, setMatches] = useState<{
     conversationId: string,
@@ -87,7 +88,7 @@ const App: React.FC = () => {
         query: searchText,
         product_image: product_image? product_image?.replace(/^data:image\/\w+;base64,/, ""): undefined,
         limit,
-        conversation_id: matches?.conversationId || undefined,
+        conversation_id:conversationId || undefined,
       };
 
       const token = process.env.REACT_APP_MATCHED_TOKEN;
@@ -117,6 +118,9 @@ const App: React.FC = () => {
             analyticsQueries: data?.analytics_queries
           });
         setResponseMessage(data?.message || '');
+        if(!conversationId) {
+          setConversationId(data?.conversation_id);
+        }
       }
     } catch (error) {
       setMatches(null);
