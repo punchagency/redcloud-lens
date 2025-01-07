@@ -1,6 +1,6 @@
 import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 import SendIcon from '@mui/icons-material/Send';
-import { Box, Chip, Container, IconButton, InputAdornment, Stack, TextField } from '@mui/material';
+import { Box, Chip, Container, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { ProductType } from '../types/product';
 import ProductCategory from './ProductCategory';
@@ -26,7 +26,7 @@ interface ChatScreenProps {
 
 const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatches, responseMessage }: ChatScreenProps) => {
   const [messages, setMessages] = useState<string[]>([prompt]);
-  const [chatData, setChatData] = useState<{ prompt: string; suggestedQueries: string[]; image?: string; responseMessage: string | null; data: ProductType[] }[]>([]);
+  const [chatData, setChatData] = useState<{ prompt: string; suggestedQueries: string[]; resultAnalysis?: string; image?: string; responseMessage: string | null; data: ProductType[] }[]>([]);
   const [input, setInput] = useState<string>('');
   const [newImage, setImage] = useState<string | ArrayBuffer | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -43,7 +43,7 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
 
   const handleSendMessage = () => {
     if (input.trim()) {
-      const newMessage = { prompt: input, image: newImage as string || '', data: [], responseMessage: '', suggestedQueries: [] };
+      const newMessage = { prompt: input, image: newImage as string || '', data: [], responseMessage: '', suggestedQueries: [], resultAnalysis: '' };
       setMessages((prevMessages) => [...prevMessages, input]);
       setChatData((prevChatData) => [...prevChatData, newMessage]);
       setInput('');
@@ -77,6 +77,7 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
           image: newImage as string || image as string || '',
           suggestedQueries: results.suggestedQries,
           responseMessage: responseMessage || '',
+          resultAnalysis: results.resultAnalysis
         },
       ]);
   }, [results, image, newImage, responseMessage, messages]);
@@ -94,7 +95,7 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
   };
 
   const handleCategoryClick = (category: string) => {
-    const newMessage = { prompt: category, image: newImage as string || '', data: [], responseMessage: '', suggestedQueries: [] };
+    const newMessage = { prompt: category, image: newImage as string || '', data: [], responseMessage: '', suggestedQueries: [], resultAnalysis: '' };
     setMessages((prevMessages) => [...prevMessages, category]);
     setChatData((prevChatData) => [...prevChatData, newMessage]);
     handleGetNLPMatches(category);
@@ -116,6 +117,9 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
             )}
 
             {data?.suggestedQueries?.length > 0 && <ProductCategory categories={data?.suggestedQueries} onCategoryClick={handleCategoryClick}/>}
+            {data?.resultAnalysis && data.resultAnalysis.length > 0 && <Typography variant="subtitle1" color="primary" sx={{ marginBottom: 1, width: '100%', textAlign: 'left' }}>
+              {data.resultAnalysis}
+            </Typography>}
             
             {!(matchesLoading && index === chatData.length - 1) && data.data.length > 0 && (
               <SearchResults results={data.data} />
