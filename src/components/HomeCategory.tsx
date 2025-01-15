@@ -42,7 +42,9 @@ const HomeCategory: React.FC<HomeCategoryProps> = ({ categories, onCategoryClick
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get(`${endpoints.categories}?category=${category}`);
+      const response = await axiosInstance.post(`${endpoints.categories}`, {
+         category
+      });
       const data = response.data;
       setProducts(data.results as Product[] || []);
     } catch (error) {
