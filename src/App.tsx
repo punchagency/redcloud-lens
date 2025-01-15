@@ -8,6 +8,7 @@ import HomeCategory from './components/HomeCategory';
 import ProductsLoading from './components/ProductsLoading';
 import SearchCard from './components/SearchCard';
 import { SearchResults } from './components/SearchResults';
+import axiosInstance, { endpoints } from './services/api';
 import { ProductType } from './types/product';
 import { Categories, searchSuggestions } from './utils/data';
 
@@ -91,22 +92,17 @@ const App: React.FC = () => {
         conversation_id:conversationId || undefined,
       };
 
-      const token = process.env.REACT_APP_MATCHED_TOKEN;
-      const response = await fetch(process.env.REACT_APP_NLP_URL as string, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await axiosInstance.post(endpoints.nlp, payload);
 
-      const data = await response.json();
+      const data = await response.data;
+
       if (data) {
+
         const formattedResults = data?.results?.map((result: any) => ({
           ...result,
           product_image: product_image || '8136031.png',
         }));
+        
         setMatches(
           {products: formattedResults,
            conversationId: data?.conversation_id,
