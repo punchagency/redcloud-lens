@@ -1,6 +1,7 @@
 import { Box, CircularProgress, Grid2, Tab, Typography } from '@mui/material';
 import Tabs, { tabsClasses } from '@mui/material/Tabs';
 import React, { useEffect, useState } from 'react';
+import axiosInstance, { endpoints } from '../services/api';
 import SearchCard from './SearchCard';
 
 interface HomeCategoryProps {
@@ -41,16 +42,8 @@ const HomeCategory: React.FC<HomeCategoryProps> = ({ categories, onCategoryClick
     setLoading(true);
     setError(null);
     try {
-      const token = process.env.REACT_APP_MATCHED_TOKEN;
-      const response = await fetch(`${process.env.REACT_APP_CATEGORY_URL as string}?category=${category}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
+      const response = await axiosInstance.get(`${endpoints.categories}?category=${category}`);
+      const data = response.data;
       setProducts(data.results as Product[] || []);
     } catch (error) {
       setError('Failed to fetch products');
