@@ -4,7 +4,7 @@ import { Box, Button, CircularProgress, Container, Grid2, IconButton, InputAdorn
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import ChatScreen from './components/ChatScreen';
-import ProductCategory from './components/ProductCategory';
+import HomeCategory from './components/HomeCategory';
 import ProductsLoading from './components/ProductsLoading';
 import SearchCard from './components/SearchCard';
 import { SearchResults } from './components/SearchResults';
@@ -252,7 +252,7 @@ const App: React.FC = () => {
               <Typography variant="h6" component="h2" gutterBottom>
                 Categories
               </Typography>
-              <ProductCategory categories={Categories?.map((cat)=> cat['Category Name'])} onCategoryClick={handleSelectSuggestions}/>
+              <HomeCategory categories={Categories?.map((cat)=> cat['Category Name'])} onCategoryClick={handleSelectSuggestions}/>
             </Stack>
           </Grid2>
           <Grid2 size={12}>
