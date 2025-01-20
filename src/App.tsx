@@ -1,6 +1,6 @@
 import { InsertPhoto as InsertPhotoIcon, Search as SearchIcon } from '@mui/icons-material';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import { Box, Button, CircularProgress, Container, Grid2, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Container, Grid2, IconButton, InputAdornment, MenuItem, Select, SelectChangeEvent, Stack, TextField, Typography } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import ChatScreen from './components/ChatScreen';
@@ -27,26 +27,29 @@ const App: React.FC = () => {
     sqlQuery: string,
     suggestedQries: string[],
     resultAnalysis: string,
-    analyticsQueries:string,
+    analyticsQueries: string,
     products: ProductType[]
   } | null>(null);
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [results, setResults] = useState<{conversationId: string,
-  message: string,
-  query: string,
-  sqlQuery: string,
-  suggestedQries: string[],
-  resultAnalysis: string,
-  analyticsQueries:string,
-  products: ProductType[]}>({
+  const [country, setCountry] = useState<string>('Nigeria');
+  const [results, setResults] = useState<{
+    conversationId: string,
+    message: string,
+    query: string,
+    sqlQuery: string,
+    suggestedQries: string[],
+    resultAnalysis: string,
+    analyticsQueries: string,
+    products: ProductType[]
+  }>({
     conversationId: '',
     message: '',
     query: '',
     sqlQuery: '',
     suggestedQries: [],
     resultAnalysis: '',
-    analyticsQueries:'',
+    analyticsQueries: '',
     products: []
   });
   const [searchClicked, setSearchClicked] = useState(false);
@@ -63,6 +66,10 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCountryChange = (event: SelectChangeEvent<string>) => {
+    setCountry(event.target.value as string);
+  };
+
   const clearPreviousState = () => {
     setError(null);
     setResponse(null);
@@ -75,7 +82,7 @@ const App: React.FC = () => {
       sqlQuery: '',
       suggestedQries: [],
       resultAnalysis: '',
-      analyticsQueries:'',
+      analyticsQueries: '',
       products: []
     });
   };
@@ -87,9 +94,10 @@ const App: React.FC = () => {
     try {
       const payload = {
         query: searchText,
-        product_image: product_image? product_image?.replace(/^data:image\/\w+;base64,/, ""): undefined,
+        product_image: product_image ? product_image?.replace(/^data:image\/\w+;base64,/, "") : undefined,
         limit,
-        conversation_id:conversationId || undefined,
+        conversation_id: conversationId || undefined,
+        country
       };
 
       const response = await axiosInstance.post(endpoints.nlp, payload);
@@ -102,10 +110,11 @@ const App: React.FC = () => {
           ...result,
           product_image: product_image || '8136031.png',
         }));
-        
+
         setMatches(
-          {products: formattedResults,
-           conversationId: data?.conversation_id,
+          {
+            products: formattedResults,
+            conversationId: data?.conversation_id,
             message: data?.message,
             query: data?.query,
             sqlQuery: data?.sql_query,
@@ -114,7 +123,7 @@ const App: React.FC = () => {
             analyticsQueries: data?.analytics_queries
           });
         setResponseMessage(data?.message || '');
-        if(!conversationId) {
+        if (!conversationId) {
           setConversationId(data?.conversation_id);
         }
       }
@@ -140,7 +149,7 @@ const App: React.FC = () => {
       sqlQuery: '',
       suggestedQries: [],
       resultAnalysis: '',
-      analyticsQueries:'',
+      analyticsQueries: '',
       products: []
     }
     );
@@ -162,25 +171,25 @@ const App: React.FC = () => {
   }, [response, searchText, searchClicked]);
 
   useEffect(() => {
-      if (matches) {
-        setResults(matches);
-      }
-    }, [matches?.products]);
-
-    const handleSelectSuggestions = (suggestion: string) => {
-      setSearchText(suggestion);
-      handleGetNLPMatches(suggestion);
+    if (matches) {
+      setResults(matches);
     }
-  
+  }, [matches?.products]);
+
+  const handleSelectSuggestions = (suggestion: string) => {
+    setSearchText(suggestion);
+    handleGetNLPMatches(suggestion);
+  }
+
   return (
     <Container className="App">
       {!firstLoad &&
-        <ChatScreen responseMessage={responseMessage} results={results} image={image || ''} prompt={searchText} matchesLoading={matchesLoading} error={error} handleGetNLPMatches={handleGetNLPMatches} />
+        <ChatScreen country={country} setFirstLoad={setFirstLoad} handleCountryChange={handleCountryChange} responseMessage={responseMessage} results={results} image={image || ''} prompt={searchText} matchesLoading={matchesLoading} error={error} handleGetNLPMatches={handleGetNLPMatches} />
       }
       {firstLoad && (
         <Grid2 container spacing={2}>
           <Grid2 size={12} sx={{
-            mt: '15vh'
+            mt: '5vh'
           }}>
             <Typography variant="h4" component="h1" gutterBottom>
               RedCloud Lens
@@ -188,6 +197,23 @@ const App: React.FC = () => {
             <Typography variant="h6" component="h2" gutterBottom>
               Find the products for your business
             </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" component="h1">
+                Select Country
+              </Typography>
+              <Select
+                value={country}
+                onChange={handleCountryChange}
+                displayEmpty
+                size='small'
+                inputProps={{ 'aria-label': 'Select Country' }}
+              >
+                <MenuItem value="Nigeria">Nigeria</MenuItem>
+                <MenuItem value="South Africa">South Africa</MenuItem>
+                <MenuItem value="Argentina">Argentina</MenuItem>
+                <MenuItem value="Brazil">Brazil</MenuItem>
+              </Select>
+            </Box>
             <TextField
               multiline
               rows={5}
@@ -248,7 +274,7 @@ const App: React.FC = () => {
               <Typography variant="h6" component="h2" gutterBottom>
                 Categories
               </Typography>
-              <HomeCategory categories={Categories?.map((cat)=> cat['Category Name'])} onCategoryClick={handleSelectSuggestions}/>
+              <HomeCategory country={country} categories={Categories?.map((cat) => cat['Category Name'])} onCategoryClick={handleSelectSuggestions} />
             </Stack>
           </Grid2>
           <Grid2 size={12}>
