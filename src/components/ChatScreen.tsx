@@ -1,7 +1,8 @@
+import { ArrowBack } from '@mui/icons-material';
 import ClearIcon from '@mui/icons-material/Clear';
 import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 import SendIcon from '@mui/icons-material/Send';
-import { Box, Chip, Container, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
+import { Box, Chip, Container, IconButton, InputAdornment, MenuItem, Select, SelectChangeEvent, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { ProductType } from '../types/product';
 import ProductCategory from './ProductCategory';
@@ -25,9 +26,12 @@ interface ChatScreenProps {
   error: string | null;
   responseMessage: string | null;
   handleGetNLPMatches: (text: string, image?: string) => void;
+  country: string;
+  handleCountryChange: (event: SelectChangeEvent<string>) => void;
+  setFirstLoad: (value: boolean) => void;
 }
 
-const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatches, responseMessage }: ChatScreenProps) => {
+const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatches, responseMessage, country, handleCountryChange, setFirstLoad }: ChatScreenProps) => {
   const [messages, setMessages] = useState<string[]>([prompt]);
   const [chatData, setChatData] = useState<{ prompt: string; suggestedQueries: string[]; resultAnalysis?: string; image?: string; responseMessage: string | null; data: ProductType[] }[]>([]);
   const [input, setInput] = useState<string>('');
@@ -67,16 +71,16 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
     }
   };
 
-   useEffect(() => {
+  useEffect(() => {
     if (!results) return;
-  
+
     const { products, query, suggestedQries, resultAnalysis } = results;
-  
+
     const newResults = products?.map((result) => ({
       ...result,
       product_image: '8136031.png',
     }));
-  
+
     setChatData((prevChatData) => {
       const lastChatData = prevChatData[prevChatData.length - 1] || {};
       return [
@@ -91,7 +95,7 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
         },
       ];
     });
-  
+
     setInput('');
   }, [results, image, responseMessage]);
 
@@ -116,6 +120,25 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
 
   return (
     <Container sx={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: 0 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', my: 2, mx: 1 }}>
+        <IconButton color="primary" onClick={() => setFirstLoad(true)}>
+          <ArrowBack
+            fontSize="small"
+          />
+        </IconButton>
+        <Select
+          value={country}
+          onChange={handleCountryChange}
+          displayEmpty
+          size='small'
+          inputProps={{ 'aria-label': 'Select Country' }}
+        >
+          <MenuItem value="Nigeria">Nigeria</MenuItem>
+          <MenuItem value="South Africa">South Africa</MenuItem>
+          <MenuItem value="Argentina">Argentina</MenuItem>
+          <MenuItem value="Brazil">Brazil</MenuItem>
+        </Select>
+      </Box>
       <Box sx={{ flexGrow: 1, overflowY: 'auto', padding: 2 }} ref={chatContainerRef}>
         {chatData.map((data, index) => (
           <Box sx={{ paddingBottom: 2 }} key={index}>
@@ -170,7 +193,7 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
           sx={{ marginRight: 1 }}
           onKeyDown={handleKeyDown}
           InputProps={{
-                  startAdornment: newImage && (
+            startAdornment: newImage && (
               <InputAdornment position="start">
                 <Stack direction="row" alignItems="center">
                   <img src={newImage as string} alt="Uploaded" style={{ height: '100%', maxHeight: '50px', marginRight: '10px' }} />
@@ -180,7 +203,7 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
                     size="small"
                     sx={{ marginLeft: '5px' }}
                   >
-                    <ClearIcon/>
+                    <ClearIcon />
                   </IconButton>
                 </Stack>
               </InputAdornment>

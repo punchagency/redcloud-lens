@@ -7,6 +7,7 @@ import SearchCard from './SearchCard';
 interface HomeCategoryProps {
   categories: string[];
   onCategoryClick: (category: string) => void;
+  country: string;
 }
 
 interface Product {
@@ -32,7 +33,7 @@ interface Product {
   last_price_update_at: string;
 }
 
-const HomeCategory: React.FC<HomeCategoryProps> = ({ categories, onCategoryClick }) => {
+const HomeCategory: React.FC<HomeCategoryProps> = ({ categories, onCategoryClick, country }) => {
   const [value, setValue] = useState(0);
   const [products, setProducts] = useState<Product[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,7 +44,8 @@ const HomeCategory: React.FC<HomeCategoryProps> = ({ categories, onCategoryClick
     setError(null);
     try {
       const response = await axiosInstance.post(`${endpoints.categories}`, {
-         category
+         category,
+         country
       });
       const data = response.data;
       setProducts(data.results as Product[] || []);
@@ -56,7 +58,7 @@ const HomeCategory: React.FC<HomeCategoryProps> = ({ categories, onCategoryClick
 
   useEffect(() => {
     handleGetHomeCategory(categories[value]);
-  }, [categories, value]);
+  }, [value]);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
