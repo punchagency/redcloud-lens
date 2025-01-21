@@ -8,9 +8,10 @@ import HomeCategory from './components/HomeCategory';
 import ProductsLoading from './components/ProductsLoading';
 import SearchCard from './components/SearchCard';
 import { SearchResults } from './components/SearchResults';
+import useUserCountry from './hooks/useUserCountry';
 import axiosInstance, { endpoints } from './services/api';
 import { ProductType } from './types/product';
-import { Categories, searchSuggestions } from './utils/data';
+import { allowedCountries, Categories, searchSuggestions } from './utils/data';
 
 const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -32,7 +33,8 @@ const App: React.FC = () => {
   } | null>(null);
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [country, setCountry] = useState<string>('Nigeria');
+  const { country: userCountry, error: locationError, getUserCountry } = useUserCountry();
+  const [country, setCountry] = useState<string>(userCountry || 'Nigeria');
   const [results, setResults] = useState<{
     conversationId: string,
     message: string,
@@ -164,6 +166,10 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    getUserCountry();
+  }, [getUserCountry]);
+
+ useEffect(() => {
     if (response && searchClicked) {
       handleGetNLPMatches(searchText, response);
       setSearchClicked(false);
@@ -208,10 +214,9 @@ const App: React.FC = () => {
                 size='small'
                 inputProps={{ 'aria-label': 'Select Country' }}
               >
-                <MenuItem value="Nigeria">Nigeria</MenuItem>
-                <MenuItem value="South Africa">South Africa</MenuItem>
-                <MenuItem value="Argentina">Argentina</MenuItem>
-                <MenuItem value="Brazil">Brazil</MenuItem>
+                {allowedCountries?.map((country) => (
+                  <MenuItem key={country} value={country}>{country}</MenuItem>
+                ))}
               </Select>
             </Box>
             <TextField
