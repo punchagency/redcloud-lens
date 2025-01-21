@@ -5,6 +5,7 @@ import SendIcon from '@mui/icons-material/Send';
 import { Box, Chip, Container, IconButton, InputAdornment, MenuItem, Select, SelectChangeEvent, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { ProductType } from '../types/product';
+import { allowedCountries } from '../utils/data';
 import ProductCategory from './ProductCategory';
 import ProductsLoading from './ProductsLoading';
 import { SearchResults } from './SearchResults';
@@ -33,7 +34,7 @@ interface ChatScreenProps {
 
 const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatches, responseMessage, country, handleCountryChange, setFirstLoad }: ChatScreenProps) => {
   const [messages, setMessages] = useState<string[]>([prompt]);
-  const [chatData, setChatData] = useState<{ prompt: string; suggestedQueries: string[]; resultAnalysis?: string; image?: string; responseMessage: string | null; data: ProductType[] }[]>([]);
+  const [chatData, setChatData] = useState<{ prompt: string; suggestedQueries: string[]; resultAnalysis?: string; image?: string; responseMessage: string | null; data: ProductType[], catalogChanged: Boolean; }[]>([]);
   const [input, setInput] = useState<string>('');
   const [newImage, setImage] = useState<string | ArrayBuffer | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -50,7 +51,7 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
 
   const handleSendMessage = () => {
     if (input.trim() || newImage) {
-      const newMessage = { prompt: input, image: newImage as string || '', data: [], responseMessage: '', suggestedQueries: [], resultAnalysis: '' };
+      const newMessage = { prompt: input, image: newImage as string || '', data: [], responseMessage: '', suggestedQueries: [], resultAnalysis: '', catalogChanged: false };
       setMessages((prevMessages) => [...prevMessages, input]);
       setChatData((prevChatData) => [...prevChatData, newMessage]);
       setInput('');
@@ -92,6 +93,7 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
           suggestedQueries: suggestedQries,
           responseMessage: responseMessage || '',
           resultAnalysis: resultAnalysis,
+          catalogChanged: lastChatData.catalogChanged,
         },
       ];
     });
@@ -112,11 +114,21 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
   };
 
   const handleCategoryClick = (category: string) => {
-    const newMessage = { prompt: category, image: newImage as string || '', data: [], responseMessage: '', suggestedQueries: [], resultAnalysis: '' };
+    const newMessage = { prompt: category, image: newImage as string || '', data: [], responseMessage: '', suggestedQueries: [], resultAnalysis: '', catalogChanged: false };
     setMessages((prevMessages) => [...prevMessages, category]);
     setChatData((prevChatData) => [...prevChatData, newMessage]);
     handleGetNLPMatches(category);
   }
+
+  //country has changed and its not the first load set catalogChanged to true for the last chatData
+  useEffect(() => {
+    if (chatData.length > 0) {
+      const lastChatData = chatData[chatData.length - 1];
+      const newMessage = { prompt: lastChatData.prompt, image: lastChatData.image, data: [], responseMessage: '', suggestedQueries: [], resultAnalysis: '', catalogChanged: true };
+      setChatData((prevChatData) => [...prevChatData, newMessage]);
+      handleGetNLPMatches(lastChatData.prompt);
+    }
+  }, [country]);
 
   return (
     <Container sx={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: 0 }}>
@@ -133,15 +145,21 @@ const ChatScreen = ({ results, image, prompt, matchesLoading, handleGetNLPMatche
           size='small'
           inputProps={{ 'aria-label': 'Select Country' }}
         >
-          <MenuItem value="Nigeria">Nigeria</MenuItem>
-          <MenuItem value="South Africa">South Africa</MenuItem>
-          <MenuItem value="Argentina">Argentina</MenuItem>
-          <MenuItem value="Brazil">Brazil</MenuItem>
+          {allowedCountries.map((country) => (
+            <MenuItem key={country} value={country}>{country}</MenuItem>
+          ))}
         </Select>
       </Box>
       <Box sx={{ flexGrow: 1, overflowY: 'auto', padding: 2 }} ref={chatContainerRef}>
         {chatData.map((data, index) => (
           <Box sx={{ paddingBottom: 2 }} key={index}>
+            {data?.catalogChanged && (
+              <Stack direction="column" alignItems="center" justifyContent="center" spacing={1}>
+                <Typography variant="caption" sx={{ marginBottom: 1, width: '100%', textAlign: 'center' }}>
+                 - Catalog changed -
+                </Typography>
+              </Stack>
+            )}
             {data.prompt && (
               <Stack direction="column" alignItems="flex-end" justifyContent="flex-end" spacing={1}>
                 <Chip label={data.prompt} sx={{ marginBottom: 1, width: 'max-content' }} />

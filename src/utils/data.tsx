@@ -454,3 +454,6 @@ interface SearchSuggestion {
   }, {
     "Category Name": "Compressed Skincare-Mask Sheets"
   }]
+
+
+  export const allowedCountries = ['Nigeria', 'South Africa', 'Argentina', 'Brazil'];
