@@ -6,7 +6,8 @@ import * as React from 'react';
 import { ProductType } from '../types/product';
 import { formatMoney } from '../utils/helpers';
 
-const Product: React.FC<ProductType> = ({ brand,
+const Product: React.FC<ProductType> = ({
+  brand,
   brand_or_manufacturer,
   category_name,
   country,
@@ -26,17 +27,26 @@ const Product: React.FC<ProductType> = ({ brand,
   sku,
   stock_status,
   top_category,
-  product_image, }) => {
+  images,
+  product_image,
+}) => {
+  const displayImage = images && images.length > 0 ? images[0] : product_image;
+
   return (
     <Card sx={{ width: '100%', height: '40vh' }}>
       <CardContent>
-        {product_image &&
+        {displayImage && (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <img src={product_image} alt={product_name} style={{ height: '20vh', maxHeight: '20vh', marginRight: '10px' }} />
+            <img
+              src={displayImage}
+              alt={product_name}
+              style={{ height: '20vh', maxHeight: '20vh', marginRight: '10px' }}
+            />
           </Box>
-        }
+        )}
         <Typography gutterBottom variant="h6" component="div">
-          {product_name?.slice(0, 50)}{product_name?.length > 50 ? '...' : ''}
+          {product_name?.slice(0, 50)}
+          {product_name?.length > 50 ? '...' : ''}
         </Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {category_name} - {brand}
