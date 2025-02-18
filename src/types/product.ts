@@ -20,4 +20,5 @@ export interface ProductType {
   stock_status: string;
   top_category: string;
   product_image: string;
+  images: string[];
 }
